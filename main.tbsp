@@ -1,0 +1,313 @@
+%top{
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <pthread.h>
+    #include <unistd.h>
+    #include <tcl.h>
+    #include <tk.h>
+    #include <slurp.h>
+    #include <pcre.h>
+    #include <sds.h>
+    #include <hstack.h>
+
+    // XXX
+    // cheap hack until tbsp supports nesting
+    // that is, until i finish fstring
+    enum {
+        NONE,
+        HEADING,
+        QUOTE,
+        LIST,
+        CODE,
+    } parent_node_type = NONE;
+    int heading_level = 1;
+
+    sds script_buffer;
+
+    #define TCL_ARGS ClientData clientData, Tcl_Interp *interp, int argc, const char **argv
+    #define TCL_EASY_CREATE_COMMAND(c) \
+        Tcl_CreateCommand(interp, #c, Tcl_ ## c, (ClientData)NULL, (void (*)(void*))NULL);
+
+    #define ECHO(fmt, ...) script_buffer = sdscatprintf(script_buffer, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
+
+    hstack_t(int, 8) md_list_stack;
+    enum {
+        NUMBER,
+        STAR,
+        PLUS,
+        MINUS,
+    } md_list_element_type;
+
+    /* Since we can't just use tbsp normally to handle inline constructs:
+        > To use the two grammars, first parse the document with the block grammar.
+        > Then perform a second parse with the inline grammar
+        > using ts_parser_set_included_ranges to specify which parts are inline content.
+        > These parts are marked as inline nodes.
+        > Children of those inline nodes should be excluded from these ranges.
+    */
+    static
+    void parse_inline(const char * const input) {
+        const char * quote       = "^\\s*>";
+        const char * bold_a      = "\\*\\*(.*?)\\*\\*";
+        const char * bold_u      = "__(.*?)__";
+        const char * italics_a   = "\\*(.*?)\\*";
+        const char * italics_u   = "_(.*?)_";
+        const char * code        = "`(.*?)`";
+        const char * inlink      = "\\[(.*?)\\]\\(#(.*?)\\)";
+        const char * outlink     = "\\[(.*?)\\]\\((.*?)\\)";
+
+        sds r = sdsnew(input);
+
+
+        for () {
+
+        }
+
+        return r;
+    }
+}
+%language markdown
+%%
+
+// --- Text of any kind
+enter inline {
+    char * t = tbget_text;
+    //sds rt = md_inline_to_groff(t);
+
+    switch (parent_node_type) {
+        case NONE: {
+            ECHO("paragraph {%s}", t);
+        } break;
+        case HEADING: {
+            ECHO("header %d {%s}", heading_level, t);
+        } break;
+        case QUOTE: {
+            ECHO("quote {%s}", t);
+        } break;
+        case LIST: {
+            char prefix[8] = {0};
+            switch (md_list_element_type) {
+                case NUMBER: {
+                    sprintf(prefix, "%d.", hs_top(md_list_stack)++);
+                } break;
+                case STAR: {
+                    prefix[0] = '*';
+                } break;
+                case MINUS: {
+                    prefix[0] = '-';
+                } break;
+                case PLUS: {
+                    prefix[0] = '+';
+                } break;
+            }
+            ECHO("list_item %ld {%s %s}", hs_size(md_list_stack), prefix, t);
+        } break;
+        case CODE: {
+            ECHO("code {%s}", t);
+        } break;
+    }
+
+    //sdsfree(rt);
+    free(t);
+}
+
+// --- Headings
+enter atx_heading {
+    parent_node_type = HEADING;
+}
+
+leave atx_heading {
+    parent_node_type = NONE;
+}
+
+enter atx_h1_marker {
+    heading_level = 1;
+}
+
+enter atx_h2_marker {
+    heading_level = 2;
+}
+
+enter atx_h3_marker {
+    heading_level = 3;
+}
+
+// --- Quotes ---
+enter block_quote {
+    parent_node_type = QUOTE;
+}
+
+leave block_quote {
+    parent_node_type = NONE;
+}
+
+// --- Lists ---
+enter list {
+    parent_node_type = LIST;
+    hs_push(md_list_stack, 1);
+}
+
+leave list {
+    if (!hs_size(md_list_stack)) {
+        parent_node_type = NONE;
+    }
+
+    (void)hs_pop(md_list_stack);
+}
+
+enter list_marker_star {
+    md_list_element_type = STAR;
+}
+
+enter list_marker_plus {
+    md_list_element_type = PLUS;
+}
+
+enter list_marker_minus {
+    md_list_element_type = MINUS;
+}
+
+enter list_marker_dot {
+    md_list_element_type = NUMBER;
+}
+
+// --- Horizontal Line ---
+enter thematic_break {
+    ECHO("horizontal_line");
+}
+
+
+// --- Code ---
+enter code_fence_content indented_code_block {
+    parent_node_type = CODE;
+}
+
+leave code_fence_content indented_code_block {
+    parent_node_type = CODE;
+}
+
+// --- Tables ---
+//enter pipe_table {
+//    ECHO(".TS");
+//    NL;
+//    ECHO("allbox;");
+//    NL;
+//}
+//
+//enter pipe_table_header {
+//    int child_count = ts_node_named_child_count($$);
+//    for (int i = 0; i < child_count; i++) {
+//        ECHO("l ");
+//    }
+//    ECHO(".");
+//    NL;
+//}
+//
+//leave pipe_table {
+//    ECHO(".TE");
+//    NL;
+//}
+//
+//leave pipe_table_row {
+//    NL;
+//}
+//
+//enter pipe_table_cell {
+//    char * t = tbget_text;
+//
+//    ECHO(t);
+//    ECHO("\t");
+//
+//    free(t);
+//}
+
+// --- Todo ---
+enter task_list_marker_checked {
+    //ECHO("\\fB[X]\\fP ");
+}
+
+enter task_list_marker_unchecked {
+    //ECHO("\\fB[ ]\\fP ");
+}
+
+%%
+
+static void tcl_run(void);
+
+void tcl_loop(void) {
+    pthread_t tcl_thread;
+    pthread_create(&tcl_thread, NULL, (void* (*)(void*))tcl_run, (void*)NULL);
+}
+
+static
+void tcl_run(void) {
+    Tcl_Interp * interp = Tcl_CreateInterp();
+    if (interp == NULL) {
+        fprintf(stderr, "Can't create Tcl interpreter\n");
+        exit(1);
+    }
+
+    Tcl_Init(interp);
+    Tk_Init(interp);
+
+    // Disable our testing trick
+    Tcl_SetVar(interp, "WRAPPED", "true", 0); 
+
+    //TCL_EASY_CREATE_COMMAND(cGetCounter);
+
+    puts(script_buffer);
+
+    int result = Tcl_Eval(interp, script_buffer);
+    if (result == TCL_ERROR) {
+        fprintf(stderr, "Tcl script execution failed: %s\n", Tcl_GetStringResult(interp));
+        exit(1);
+    }
+
+    Tk_MainLoop();
+}
+
+static
+void usage(void) {
+    puts(
+        "markdown-gui <input-file>\n"
+        "  -h        : print help and exit\n"
+    );
+}
+
+signed main(int argc, char * argv[]) {
+    // Init
+    const char * in_file = NULL;
+
+    if (argc < 2) {
+      usage_error:
+        usage();
+        return 1;
+    }
+
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-h")
+        ||  !strcmp(argv[i], "--help")) {
+            usage();
+            return 0;
+        } else {
+            in_file = argv[i];
+        }
+    }
+
+    if (!in_file) {
+        goto usage_error;
+    }
+
+    char * in_str = slurp(argv[1]);
+
+    script_buffer = sdsnew("source \"lui.tcl\"\n");
+
+    // IoC
+    tbtraverse(in_str);
+
+    // Core
+    tcl_loop();
+    while (true) { usleep(50 * 1000); }
+
+    return 0;
+}
