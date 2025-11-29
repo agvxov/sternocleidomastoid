@@ -8,6 +8,9 @@
     #include <slurp.h>
     #include <sds.h>
     #include <hstack.h>
+    #include "global.h"
+
+    extern int iltraverse(const char * const tbcode);
 
     // XXX
     // cheap hack until tbsp supports nesting
@@ -26,9 +29,6 @@
     #define TCL_ARGS ClientData clientData, Tcl_Interp *interp, int argc, const char **argv
     #define TCL_EASY_CREATE_COMMAND(c) \
         Tcl_CreateCommand(interp, #c, Tcl_ ## c, (ClientData)NULL, (void (*)(void*))NULL);
-
-    #define ECHO(fmt, ...) script_buffer = sdscatprintf(script_buffer, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
-    #define ECHOV(v)       script_buffer = sdscat(script_buffer, v)
 
     hstack_t(int, 8) md_list_stack;
     enum {
@@ -104,9 +104,6 @@
                         is_strike = !is_strike;
                     }
                 }
-                case '[': {
-                    state = IN_POSSIBLE_LINK_TITLE;
-                } break;
                 case '\\': {
                     if (s[1] != '\0') {
                         ++s;
@@ -144,7 +141,8 @@ enter inline {
 
     switch (parent_node_type) {
         case NONE: {
-            parse_inline(t);
+            //parse_inline(t);
+            iltraverse(t);
         } break;
         case HEADING: {
             ECHO("header %d {%s}", heading_level, t);
@@ -366,7 +364,7 @@ signed main(int argc, char * argv[]) {
         goto usage_error;
     }
 
-    char * in_str = slurp(argv[1]);
+    char * in_str = slurp(in_file);
 
     script_buffer = sdsnew("source \"lui.tcl\"\n");
 

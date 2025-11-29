@@ -1,6 +1,61 @@
 %top{
+    #include "global.h"
+    #include "slurp.h"
 
+    #ifdef INLINE_MAIN
+        #undef ECHO
+        #define ECHO(fmt, ...) printf(fmt "\n" __VA_OPT__(,) __VA_ARGS__)
+    #endif
+
+    static int last_end_pos = 0;
+
+    #define FLUSH flush(tbnode, tbcode)
+    void flush(TSNode n, const char * const s) {
+        int start = ts_node_start_byte(n);
+        int end   = ts_node_end_byte(n);
+
+        printf("%d %d %d\n", last_end_pos, start, end);
+
+        if (start != last_end_pos) {
+            ECHO("append_text {%.*s} {}", start - last_end_pos, s+last_end_pos);
+        }
+
+        last_end_pos = end;
+    }
 }
 %language markdown_inline
 %%
+enter emphasis {
+    FLUSH;
+    char * t = tbget_text;
+    ECHO("append_text {%s} {italic}", t);
+    free(t);
+
+}
+
+enter strong_emphasis {
+    FLUSH;
+    char * t = tbget_text;
+    ECHO("append_text {%s} {bold}", t);
+    free(t);
+}
+
+leave inline {
+    last_end_pos = 0;
+}
 %%
+
+#ifdef INLINE_MAIN
+/* @BAKE
+    ./tbsp --prefix il -o $@.c $@
+    gcc -Ilibrary -DINLINE_MAIN -D_GNU_SOURCE -o $*.out $@.c -ltree-sitter -ltree-sitter-markdown-inline -ggdb
+   @STOP
+*/
+signed main(int argc, char * argv[]) {
+    const char * in_file = NULL;
+    char * in_str = slurp(argv[1]);
+    iltraverse(in_str);
+
+    return 0;
+}
+#endif
