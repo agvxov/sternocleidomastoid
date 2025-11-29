@@ -21,7 +21,7 @@ proc new_element_name {type} {
         set ::element_counter($type) 0
     }
     incr ::element_counter($type)
-    return ".root.mid.${type}$::element_counter($type)"
+    return ".root.mid.t.${type}$::element_counter($type)"
 }
 
 # inline formatting
@@ -106,11 +106,13 @@ proc horizontal_line {} {
 
     frame $cursor \
         -height 2 \
-        -background "#808080" \
+        -width 200 \
+        -background "#000000" \
         -borderwidth 0 \
         -highlightthickness 0
 
     .root.mid.t window create end -window $cursor
+    append_text "\n\n" {}
 }
 
 # --- ---- ---
