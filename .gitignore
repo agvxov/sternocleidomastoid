@@ -3,3 +3,4 @@
 *.tbsp.c
 # XXX
 ts-markdown-treedump.*
+tbsp
