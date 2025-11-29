@@ -69,10 +69,6 @@
             sdsclear(command);                                                 \
             sdsclear(r);                                                       \
         } while (0)
-        const char * quote       = "^\\s*>";
-        const char * code        = "`(.*?)`";
-        const char * inlink      = "\\[(.*?)\\]\\(#(.*?)\\)";
-        const char * outlink     = "\\[(.*?)\\]\\((.*?)\\)";
 
         sds r       = sdsnew("");
         sds command = sdsnew("");
