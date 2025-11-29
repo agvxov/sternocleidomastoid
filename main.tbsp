@@ -29,6 +29,7 @@
         Tcl_CreateCommand(interp, #c, Tcl_ ## c, (ClientData)NULL, (void (*)(void*))NULL);
 
     #define ECHO(fmt, ...) script_buffer = sdscatprintf(script_buffer, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
+    #define ECHOV(v)       script_buffer = sdscat(script_buffer, v)
 
     hstack_t(int, 8) md_list_stack;
     enum {
@@ -43,27 +44,77 @@
         > Then perform a second parse with the inline grammar
         > using ts_parser_set_included_ranges to specify which parts are inline content.
         > These parts are marked as inline nodes.
-        > Children of those inline nodes should be excluded from these ranges.
     */
     static
     void parse_inline(const char * const input) {
+      #define FLUSH do {\
+            if (!sdslen(r)) { break; }                                         \
+            command = sdscatprintf(command, "$::cursor insert end {%s} {", r); \
+            if (is_bold && is_italic) {                                        \
+                command = sdscat(command, "bolditalic ");                      \
+            } else                                                             \
+            if (is_bold) {                                                     \
+                command = sdscat(command, "bold ");                            \
+            } else                                                             \
+            if (is_italic) {                                                   \
+                command = sdscat(command, "italic ");                          \
+            }                                                                  \
+                                                                               \
+            if (is_strike) {                                                   \
+                command = sdscat(command, "strike ");                          \
+            }                                                                  \
+                                                                               \
+            command = sdscat(command, "}\n");                                  \
+                                                                               \
+            ECHOV(command);                                                    \
+            sdsclear(command);                                                 \
+            sdsclear(r);                                                       \
+        } while (0)
         const char * quote       = "^\\s*>";
-        const char * bold_a      = "\\*\\*(.*?)\\*\\*";
-        const char * bold_u      = "__(.*?)__";
-        const char * italics_a   = "\\*(.*?)\\*";
-        const char * italics_u   = "_(.*?)_";
         const char * code        = "`(.*?)`";
         const char * inlink      = "\\[(.*?)\\]\\(#(.*?)\\)";
         const char * outlink     = "\\[(.*?)\\]\\((.*?)\\)";
 
-        sds r = sdsnew(input);
+        sds r       = sdsnew("");
+        sds command = sdsnew("");
 
+        bool is_bold   = false;
+        bool is_italic = false;
+        bool is_strike = false;
 
-        for () {
+        for (const char * s = input; *s != '\0'; s++) {
+            switch (*s) {
+                case '*': case '_': {
+                    FLUSH;
 
+                    char c = *s;
+                    if (s[1] == c) {
+                        is_bold = !is_bold;
+                    } else {
+                        is_italic = !is_italic;
+                    }
+                } break;
+                case '~': {
+                    if (s[1] == '~'
+                    &&  s[2] == '~') {
+                        FLUSH;
+
+                        is_strike = !is_strike;
+                    }
+                }
+                case '\\': {
+                    if (s[1] != '\0') {
+                        ++s;
+                    }
+                } break;
+                default: {
+                    r = sdscatlen(r, s, 1);
+                } break;
+            }
         }
+        FLUSH;
 
-        return r;
+      #undef FLUSH
     }
 }
 %language markdown
@@ -72,11 +123,11 @@
 // --- Text of any kind
 enter inline {
     char * t = tbget_text;
-    //sds rt = md_inline_to_groff(t);
 
     switch (parent_node_type) {
         case NONE: {
-            ECHO("paragraph {%s}", t);
+            ECHO("paragraph");
+            parse_inline(t);
         } break;
         case HEADING: {
             ECHO("header %d {%s}", heading_level, t);
@@ -107,7 +158,6 @@ enter inline {
         } break;
     }
 
-    //sdsfree(rt);
     free(t);
 }
 
