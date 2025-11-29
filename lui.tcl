@@ -29,64 +29,41 @@ font create NormalFont     -family sans -size 12
 font create BoldFont       -family sans -size 12 -weight bold
 font create ItalicFont     -family sans -size 12 -slant italic
 font create BoldItalicFont -family sans -size 12 -weight bold -slant italic
-
-# the latest widget; used for appending
-set cursor {}
+font create H1Font         -family sans -size 22 -weight bold
+font create H2Font         -family sans -size 16 -weight bold
+font create H3Font         -family sans -size 12 -weight bold
+font create CodeFont       -family courier -size 11
 
 # formatting settings
 set header_font_size 16
 
+proc finalize_document {} {
+    .root.mid.t configure -state disabled
+}
+
 # --- -------- ---
 # --- Elements ---
 # --- -------- ---
-proc header {level text} {
-    set ::cursor [new_element_name header]
-
-    set font_size [expr {$::header_font_size - $level*2}]
-    if {$font_size < 8} { set font_size 8 }
-
-    label $::cursor -text $text -font "TkDefaultFont $font_size bold"
-    pack $::cursor -side top -anchor w -padx 4 -pady 4
+proc append_text {text tags} {
+    .root.mid.t insert end $text $tags
 }
 
-#proc paragraph {text} {
-proc paragraph {} {
-    set ::cursor [new_element_name paragraph]
+proc header {level text} {
+    append_text "$text\n" h$level
+}
 
-    text $::cursor \
-        -background [. cget -background] \
-        -borderwidth 0 \
-        -highlightthickness 0 \
-        -wrap word \
-        -padx 0 \
-        -pady 0 \
-        -height 3
-    # XXX height is fucked; it takes up exacty as much space as specified
-    #      instead of what is required, meaning text is either cropped or the
-    #      widget is too big. not specifying it apparently uses some large default
-
-    # XXX disables algorithmic editting too
-    #$::cursor configure -state disabled
-
-    $::cursor tag configure bold       -font BoldFont
-    $::cursor tag configure italic     -font ItalicFont
-    $::cursor tag configure bolditalic -font BoldItalicFont
-    $::cursor tag configure strike     -overstrike 1
-
-    pack $::cursor -side top -anchor w -padx 4 -pady 2
+proc paragraph_end {} {
+    append_text "\n\n" {}
 }
 
 proc quote {text} {
-    set ::cursor [new_element_name quote]
+    set cursor [new_element_name quote]
 
-    frame $::cursor -relief flat -padx 6 -pady 2
-    pack  $::cursor -side top -anchor w -padx 6 -pady 2
-    frame $::cursor.stripe -width 4 -height 1 -background #ba0000
-    pack  $::cursor.stripe -in $::cursor -side left -padx {0 6} -pady 2 -fill y
-    label $::cursor.lbl -text $text -wraplength 560 -justify left
-    pack  $::cursor.lbl -in $::cursor -side left -fill x -expand 1 -padx 4
+    frame $cursor -width 4 -background "#ba0000" -height 1
 
-    # XXX set ::cursor accuretly
+    .root.mid.t window create end -window $cursor; # -padx {6 6} -pady 2 -align center
+
+    append_text "$text\n" quote
 }
 
 proc link {text url} {
@@ -98,40 +75,42 @@ proc link {text url} {
 }
 
 proc code {text} {
-    set ::cursor [new_element_name code]
+    set cursor [new_element_name code]
 
-    set lines [llength [split $text "\n"]]
-    if {$lines < 1} { set lines 1 }
-    text $::cursor -wrap none -height $lines -borderwidth 1 -relief sunken -font TkFixedFont
-    pack $::cursor -side top -anchor w -padx 6 -pady 4
-    $::cursor insert end $text
-    $::cursor configure -state disabled
+    #set lines [llength [split $text "\n"]]
+    #if {$lines < 1} { set lines 1 }
+    #text $::cursor -wrap none -height $lines -borderwidth 1 -relief sunken -font TkFixedFont
+    #pack $::cursor -side top -anchor w -padx 6 -pady 4
+    #$::cursor insert end $text
+    #$::cursor configure -state disabled
+
+    set newline_count [expr {[llength [split $text "\n"]] - 1}]
+
+    text $cursor -height $newline_count
+    
+    $cursor tag configure code -font CodeFont -background "#f4e8c4"
+    $cursor insert end $text code
+    $cursor configure -state disabled
+
+    .root.mid.t window create end -window $cursor
 }
 
 proc list_item {level text} {
-    set ::cursor [new_element_name list]
+    set indent [expr $level * 4]
 
-    if {![string is integer -strict $level]} { set level 0 }
-    set indent [expr {($level + 1) * 20}]
-
-    frame $::cursor -relief flat -padx $indent
-    pack  $::cursor -side top -anchor w -padx 4 -pady 1
-    label $::cursor.lbl -text $text -wraplength [expr {600 - $indent}] -justify left
-    pack  $::cursor.lbl -in $::cursor -side left -expand 1 -padx 4
-
-    # XXX set ::cursor accuretly
+    append_text "[string repeat " " $indent]$text\n" {}
 }
 
 proc horizontal_line {} {
-    set ::cursor [new_element_name horizontal_line]
+    set cursor [new_element_name horizontal_line]
 
-    frame $::cursor \
+    frame $cursor \
         -height 2 \
         -background "#808080" \
         -borderwidth 0 \
         -highlightthickness 0
 
-    pack $::cursor -side top -fill x -padx 20 -pady 6
+    .root.mid.t window create end -window $cursor
 }
 
 # --- ---- ---
@@ -154,5 +133,33 @@ grid columnconfigure .root 1 -weight 8
 grid columnconfigure .root 2 -weight 1
 
 grid rowconfigure .root 0 -weight 1
+#pack propagate .mod 0
+
+text .root.mid.t \
+    -background [. cget -background] \
+    -borderwidth 0 \
+    -highlightthickness 0 \
+    -wrap word \
+    -padx 0 \
+    -pady 0
+
+.root.mid.t tag configure bold       -font BoldFont
+.root.mid.t tag configure italic     -font ItalicFont
+.root.mid.t tag configure bolditalic -font BoldItalicFont
+.root.mid.t tag configure strike     -overstrike 1
+.root.mid.t tag configure h1         -font H1Font
+.root.mid.t tag configure h2         -font H2Font
+.root.mid.t tag configure h3         -font H3Font
+.root.mid.t tag configure quote \
+    -lmargin1 16  \
+    -lmargin2 16  \
+    -rmargin 10   \
+    -spacing1 4   \
+    -spacing3 4
+.root.mid.t tag configure quote_stripe \
+    -lmargin1 0 \
+    -lmargin2 0
+.root.mid.t tag configure code -font CodeFont -background "#f4e8c4"
+pack .root.mid.t -expand 1 -fill both
 
 bind . <Destroy> {exit}

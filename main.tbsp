@@ -49,7 +49,7 @@
     void parse_inline(const char * const input) {
       #define FLUSH do {\
             if (!sdslen(r)) { break; }                                         \
-            command = sdscatprintf(command, "$::cursor insert end {%s} {", r); \
+            command = sdscatprintf(command, "append_text {%s} {", r);          \
             if (is_bold && is_italic) {                                        \
                 command = sdscat(command, "bolditalic ");                      \
             } else                                                             \
@@ -107,6 +107,9 @@
                         ++s;
                     }
                 } break;
+                case '\n': {
+                    r = sdscatlen(r, " ", 1);
+                } break;
                 default: {
                     r = sdscatlen(r, s, 1);
                 } break;
@@ -120,13 +123,22 @@
 %language markdown
 %%
 
+leave document {
+    ECHO("finalize_document");
+}
+
+leave paragraph {
+    if (!hs_size(md_list_stack)) {
+        ECHO("paragraph_end");
+    }
+}
+
 // --- Text of any kind
 enter inline {
     char * t = tbget_text;
 
     switch (parent_node_type) {
         case NONE: {
-            ECHO("paragraph");
             parse_inline(t);
         } break;
         case HEADING: {
@@ -198,11 +210,12 @@ enter list {
 }
 
 leave list {
+    (void)hs_pop(md_list_stack);
+
     if (!hs_size(md_list_stack)) {
         parent_node_type = NONE;
+        ECHO("paragraph_end");
     }
-
-    (void)hs_pop(md_list_stack);
 }
 
 enter list_marker_star {
@@ -271,7 +284,7 @@ leave code_fence_content indented_code_block {
 //    free(t);
 //}
 
-// --- Todo ---
+// --- To-do ---
 enter task_list_marker_checked {
     //ECHO("\\fB[X]\\fP ");
 }
