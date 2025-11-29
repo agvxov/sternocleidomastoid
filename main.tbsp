@@ -82,6 +82,13 @@
         bool is_italic = false;
         bool is_strike = false;
 
+        enum {
+            INITIAL,
+            IN_POSSIBLE_LINK_TITLE,
+        } state = INITIAL;
+        sds alt     = sdsnew("");
+        sds dest    = sdsnew("");
+
         for (const char * s = input; *s != '\0'; s++) {
             switch (*s) {
                 case '*': case '_': {
@@ -102,6 +109,9 @@
                         is_strike = !is_strike;
                     }
                 }
+                case '[': {
+                    state = IN_POSSIBLE_LINK_TITLE;
+                } break;
                 case '\\': {
                     if (s[1] != '\0') {
                         ++s;
