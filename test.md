@@ -38,3 +38,5 @@ By the way, instead of indenting the block, you can use fenced code blocks, if y
 ```c
     signed main(void) { ; }
 ```
+
+![placeholder](image.jpg)
