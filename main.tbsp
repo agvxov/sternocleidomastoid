@@ -6,7 +6,6 @@
     #include <tcl.h>
     #include <tk.h>
     #include <slurp.h>
-    #include <pcre.h>
     #include <sds.h>
     #include <hstack.h>
 
