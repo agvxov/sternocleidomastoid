@@ -14,7 +14,7 @@
         int start = ts_node_start_byte(n);
         int end   = ts_node_end_byte(n);
 
-        printf("%d %d %d\n", last_end_pos, start, end);
+        //printf("%d %d %d\n", last_end_pos, start, end);
 
         if (start != last_end_pos) {
             ECHO("append_text {%.*s} {}", start - last_end_pos, s+last_end_pos);
@@ -40,7 +40,22 @@ enter strong_emphasis {
     free(t);
 }
 
+enter code_span {
+    FLUSH;
+    char * t = tbget_text;
+    ECHO("append_text {%s} {code}", t);
+    free(t);
+}
+
 leave inline {
+    // XXX
+    auto n = tbnode;
+    int end   = ts_node_end_byte(n);
+
+    if (end != last_end_pos) {
+        ECHO("append_text {%.*s} {}", end - last_end_pos, tbcode+last_end_pos);
+    }
+
     last_end_pos = 0;
 }
 %%
