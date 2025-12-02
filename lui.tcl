@@ -34,6 +34,29 @@ font create H2Font         -family sans -size 16 -weight bold
 font create H3Font         -family sans -size 12 -weight bold
 font create CodeFont       -family courier -size 11
 
+proc setup_tags {text_element} {
+    $text_element tag configure h1         -font H1Font
+    $text_element tag configure h2         -font H2Font
+    $text_element tag configure h3         -font H3Font
+
+    $text_element tag configure bold       -font BoldFont
+    $text_element tag configure italic     -font ItalicFont
+    $text_element tag configure bolditalic -font BoldItalicFont
+    $text_element tag configure strike     -overstrike 1
+
+    $text_element tag configure code -font CodeFont -background "#f4e8c4"
+
+    $text_element tag configure quote \
+        -lmargin1 16  \
+        -lmargin2 16  \
+        -rmargin 10   \
+        -spacing1 4   \
+        -spacing3 4
+    $text_element tag configure quote_stripe \
+        -lmargin1 0 \
+        -lmargin2 0
+}
+
 # formatting settings
 set header_font_size 16
 
@@ -144,24 +167,7 @@ text .root.mid.t \
     -wrap word \
     -padx 0 \
     -pady 0
-
-.root.mid.t tag configure bold       -font BoldFont
-.root.mid.t tag configure italic     -font ItalicFont
-.root.mid.t tag configure bolditalic -font BoldItalicFont
-.root.mid.t tag configure strike     -overstrike 1
-.root.mid.t tag configure h1         -font H1Font
-.root.mid.t tag configure h2         -font H2Font
-.root.mid.t tag configure h3         -font H3Font
-.root.mid.t tag configure quote \
-    -lmargin1 16  \
-    -lmargin2 16  \
-    -rmargin 10   \
-    -spacing1 4   \
-    -spacing3 4
-.root.mid.t tag configure quote_stripe \
-    -lmargin1 0 \
-    -lmargin2 0
-.root.mid.t tag configure code -font CodeFont -background "#f4e8c4"
+setup_tags .root.mid.t
 pack .root.mid.t -expand 1 -fill both
 
 bind . <Destroy> {exit}
