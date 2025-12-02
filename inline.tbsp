@@ -7,6 +7,33 @@
         #define ECHO(fmt, ...) printf(fmt "\n" __VA_OPT__(,) __VA_ARGS__)
     #endif
 
+    /* # Tree-sitter-markdown-inline is horrifying
+     * The problem is that it was "designed for highlighting" and "ts is restrictive",
+     *  ie, a retard wrote it. As of 2025, there is no good MD parser on the face of
+     *  the planet, which is partially due to the spec being finicky.
+     *
+     * One problem is, that there are no raw-text nodes.
+     * They simply do not exist.
+     * To get regular text protions, one has to juggle begining and ending positions
+     *  of formatted text notes, e.g. "did we skip between this italic and this bold?"
+     *
+     * The second problem is `*` and `**` combining instead of it being its own node.
+     * I do not think anyone ever wrote "*This is my bloog, **enjoy!***",
+     *  still its something that is legal.
+     *
+     * `***t***` is always parsed as:
+     *    (emphasis
+     *        (emphasis_delimiter)
+     *        (strong_emphasis
+     *            (emphasis_delimiter)
+     *            (emphasis_delimiter)
+     *            (emphasis_delimiter)
+     *            (emphasis_delimiter))
+     *        (emphasis_delimiter))
+     * On which we depend as a special case. All other combinations can fuck themselves.
+     *
+     * Conclusion: I will have to write a markdown parser one day.
+     */
     static int last_end_pos = 0;
 
     #define FLUSH flush(tbnode, tbcode)
