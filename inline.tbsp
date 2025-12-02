@@ -49,7 +49,7 @@
         int start = ts_node_start_byte(n);
         int end   = ts_node_end_byte(n);
 
-        printf("%d %d %d\n", last_end_pos, start, end);
+        //printf("%d %d %d\n", last_end_pos, start, end);
 
         if (start > last_end_pos) {
             ECHO("append_text {%.*s} {}", start - last_end_pos, s+last_end_pos);
@@ -114,7 +114,7 @@ enter image {
     char * description = tbget_node_text(ts_node_child(tbnode, IMG_DESC_CHILD_POS));
     char * destination = tbget_node_text(ts_node_child(tbnode, IMG_DEST_CHILD_POS));
 
-    ECHO("md_image {%s} {%s}", description, destination);
+    ECHO("media {%s} {%s}", description, destination);
 
     free(description);
     free(destination);

@@ -3,18 +3,65 @@ package require Tk
 # --- ------- ---
 # --- Globals ---
 # --- ------- ---
-set imageviewer $env(IMAGEVIEWER)
-set videoplayer $env(VIDEOPLAYER)
+# XXX
+#set opener $env(OPENER)
 
 # XXX modify to use environment variable
 proc open_url {url} {
-    # try common commands; ignore failures
-    if {[catch {exec xdg-open -- "$url" &}]} {
-        if {[catch {exec open "$url" &}]} {
-            # windows: use cmd /c start "" "url"
-            catch {exec cmd /C start \"\" \"$url\"}
-        }
+    [catch {exec xdg-open "$url" &}]
+}
+
+#proc pid2xid {pid} {
+#    set ids [split [exec xdotool search --pid $pid] "\n"]
+#    return [xid [lindex $ids 0]]
+#}
+
+proc pid2xid {pid} {
+    set r ""
+    if {![catch {exec xdotool search --pid $pid} out]} {
+        set r [lindex [split $out "\n"] 0]
     }
+    return $r
+}
+
+set embedding_queue {}
+proc queue_embedding {e cmd arg} {
+    lappend $::embedding_queue "{$e $cmd $arg}"
+}
+
+proc embed_application {$e $cmd $arg} {
+    set container_xid [winfo id $cursor]
+
+    set pid [exec {*}$cmd $arg &]
+    puts "PID: $pid"
+
+    #after 1000
+
+    set xid [pid2xid $pid]
+    puts "XID: $xid"
+
+    reparent $xid $container_xid
+
+    return
+    # XXX ignore; fallback code
+    if {[catch {image create photo -file $link} img]} {
+        placeholder $name
+        return
+    }
+
+    .root.mid.t image create end -image $img
+}
+
+proc finalize_embeddings {} {
+    update idletasks
+    update
+
+    foreach {e cmd arg} $::embedding_queue {
+        puts "{$e $cmd $arg}"
+        embed_application $e $cmd $arg
+    }
+
+    set ::embedding_queue {}
 }
 
 # produce unique widget names so Tk accepts them
@@ -67,6 +114,8 @@ set header_font_size 16
 
 proc finalize_document {} {
     .root.mid.t configure -state disabled
+
+    finalize_embeddings
 }
 
 # --- -------- ---
@@ -147,39 +196,13 @@ proc placeholder {target} {
     append_text $target "placeholder"
 }
 
-proc embed_application {cmd arg} {
+proc media {name link} {
     set cursor [new_element_name embedding]
 
-    frame $cursor -width 640 -height 480
+    frame $cursor -width 400 -height 400
+    .root.mid.t window create end -window $cursor
 
-    update idletasks
-    update
-
-    set xid [winfo id $cursor]
-
-    # XXX
-    exec sh -c "mpv --wid=$xid video.mp4 &"
-}
-
-proc md_image {name link} {
-    #if {$imageviewer ne ""} {
-    #    embed_application $imageviewer $link
-    #}
-
-    if {[catch {image create photo -file $link} img]} {
-        placeholder $name
-        return
-    }
-
-    .root.mid.t image create end -image $img
-}
-
-proc md_video {name link} {
-    if {$videoplayer ne ""} {
-        embed_application $videoplayer $link
-    } else {
-        placeholder $name
-    }
+    queue_embedding $cursor xdg-open $link
 }
 
 # --- ---- ---

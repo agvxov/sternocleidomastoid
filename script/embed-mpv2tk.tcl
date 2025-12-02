@@ -9,4 +9,4 @@ update
 set xid [winfo id .video_frame]
 puts "Container XID: $xid"
 
-exec sh -c "mpv --wid=$xid video.mp4 &"
+exec mpv --wid=$xid --keep-open video.mp4 &

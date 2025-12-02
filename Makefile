@@ -1,5 +1,5 @@
 CFLAGS := -Ilibrary -D_GNU_SOURCE -std=c23 -Wall -ggdb
-LIB    := $$(pkg-config --cflags --libs tcl tk) -ltree-sitter -ltree-sitter-markdown -ltree-sitter-markdown-inline
+LIB    := $$(pkg-config --cflags --libs tcl tk x11) -ltree-sitter -ltree-sitter-markdown -ltree-sitter-markdown-inline
 
 main:
 	./tbsp -o main.tbsp.c main.tbsp

@@ -5,6 +5,7 @@
     #include <unistd.h>
     #include <tcl.h>
     #include <tk.h>
+    #include <X11/Xlib.h>
     #include <slurp.h>
     #include <sds.h>
     #include <hstack.h>
@@ -164,7 +165,7 @@ enter code_fence_content indented_code_block {
 }
 
 leave code_fence_content indented_code_block {
-    parent_node_type = CODE;
+    parent_node_type = NONE;
 }
 
 // --- Tables ---
@@ -220,6 +221,23 @@ void tcl_loop(void) {
     pthread_create(&tcl_thread, NULL, (void* (*)(void*))tcl_run, (void*)NULL);
 }
 
+int Tcl_reparent(TCL_ARGS) {
+    if (argc != 3) {
+        Tcl_SetResult(interp, "Usage: reparent <child_window_id> <parent_window_id>", TCL_STATIC);
+        return TCL_ERROR;
+    }
+
+    Window child = (Window)strtoul(argv[1], NULL, 0);
+    Window parent = (Window)strtoul(argv[2], NULL, 0);
+
+    Display *dpy = Tk_Display(Tk_MainWindow(interp));
+    XReparentWindow(dpy, child, parent, 0, 0);
+    XMapWindow(dpy, child);
+    XFlush(dpy);
+
+    return TCL_OK;
+}
+
 static
 void tcl_run(void) {
     Tcl_Interp * interp = Tcl_CreateInterp();
@@ -234,7 +252,7 @@ void tcl_run(void) {
     // Disable our testing trick
     Tcl_SetVar(interp, "WRAPPED", "true", 0); 
 
-    //TCL_EASY_CREATE_COMMAND(cGetCounter);
+    TCL_EASY_CREATE_COMMAND(reparent);
 
     puts(script_buffer);
 
