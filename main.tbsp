@@ -37,90 +37,6 @@
         PLUS,
         MINUS,
     } md_list_element_type;
-
-    /* Since we can't just use tbsp normally to handle inline constructs:
-        > To use the two grammars, first parse the document with the block grammar.
-        > Then perform a second parse with the inline grammar
-        > using ts_parser_set_included_ranges to specify which parts are inline content.
-        > These parts are marked as inline nodes.
-    */
-    static
-    void parse_inline(const char * const input) {
-      #define FLUSH do {\
-            if (!sdslen(r)) { break; }                                         \
-            command = sdscatprintf(command, "append_text {%s} {", r);          \
-            if (is_bold && is_italic) {                                        \
-                command = sdscat(command, "bolditalic ");                      \
-            } else                                                             \
-            if (is_bold) {                                                     \
-                command = sdscat(command, "bold ");                            \
-            } else                                                             \
-            if (is_italic) {                                                   \
-                command = sdscat(command, "italic ");                          \
-            }                                                                  \
-                                                                               \
-            if (is_strike) {                                                   \
-                command = sdscat(command, "strike ");                          \
-            }                                                                  \
-                                                                               \
-            command = sdscat(command, "}\n");                                  \
-                                                                               \
-            ECHOV(command);                                                    \
-            sdsclear(command);                                                 \
-            sdsclear(r);                                                       \
-        } while (0)
-
-        sds r       = sdsnew("");
-        sds command = sdsnew("");
-
-        bool is_bold   = false;
-        bool is_italic = false;
-        bool is_strike = false;
-
-        enum {
-            INITIAL,
-            IN_POSSIBLE_LINK_TITLE,
-        } state = INITIAL;
-        sds alt     = sdsnew("");
-        sds dest    = sdsnew("");
-
-        for (const char * s = input; *s != '\0'; s++) {
-            switch (*s) {
-                case '*': case '_': {
-                    FLUSH;
-
-                    char c = *s;
-                    if (s[1] == c) {
-                        is_bold = !is_bold;
-                    } else {
-                        is_italic = !is_italic;
-                    }
-                } break;
-                case '~': {
-                    if (s[1] == '~'
-                    &&  s[2] == '~') {
-                        FLUSH;
-
-                        is_strike = !is_strike;
-                    }
-                }
-                case '\\': {
-                    if (s[1] != '\0') {
-                        ++s;
-                    }
-                } break;
-                case '\n': {
-                    r = sdscatlen(r, " ", 1);
-                } break;
-                default: {
-                    r = sdscatlen(r, s, 1);
-                } break;
-            }
-        }
-        FLUSH;
-
-      #undef FLUSH
-    }
 }
 %language markdown
 %%
@@ -141,7 +57,6 @@ enter inline {
 
     switch (parent_node_type) {
         case NONE: {
-            //parse_inline(t);
             iltraverse(t);
         } break;
         case HEADING: {
