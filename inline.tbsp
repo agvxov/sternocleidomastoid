@@ -54,6 +54,12 @@
 %%
 enter emphasis {
     FLUSH;
+
+    if ((!ts_node_is_null(ts_node_child(tbnode, 1)))
+    && !strcmp("strong_emphasis", ts_node_type(ts_node_child(tbnode, 1)))) {
+        break;
+    }
+
     char * t = tbget_text;
     ECHO("append_text {%s} {italic}", t);
     free(t);
@@ -64,6 +70,13 @@ enter strong_emphasis {
     FLUSH;
     char * t = tbget_text;
     ECHO("append_text {%s} {bold}", t);
+    free(t);
+}
+
+enter strikethrough {
+    FLUSH;
+    char * t = tbget_text;
+    ECHO("append_text {%s} {strike}", t);
     free(t);
 }
 
