@@ -17,6 +17,12 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit,
 sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 Unicode is supported. ☺
 
+![placeholder](image.png)
+
+![placeholder](image.jpg)
+
+![placehholder_for_intentially_broken_image](image.jpg)
+
 ---
 
 ## An h2 header
@@ -39,4 +45,4 @@ By the way, instead of indenting the block, you can use fenced code blocks, if y
     signed main(void) { ; }
 ```
 
-![placeholder](image.jpg)
+![placeholder](video.mp4)

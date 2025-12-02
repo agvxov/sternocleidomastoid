@@ -3,6 +3,9 @@ package require Tk
 # --- ------- ---
 # --- Globals ---
 # --- ------- ---
+set imageviewer $env(IMAGEVIEWER)
+set videoplayer $env(VIDEOPLAYER)
+
 # XXX modify to use environment variable
 proc open_url {url} {
     # try common commands; ignore failures
@@ -45,6 +48,8 @@ proc setup_tags {text_element} {
     $text_element tag configure strike     -overstrike 1
 
     $text_element tag configure code -font CodeFont -background "#f4e8c4"
+
+    $text_element tag configure placeholder -font CodeFont -background red
 
     $text_element tag configure quote \
         -lmargin1 16  \
@@ -136,6 +141,45 @@ proc horizontal_line {} {
 
     .root.mid.t window create end -window $cursor
     append_text "\n\n" {}
+}
+
+proc placeholder {target} {
+    append_text $target "placeholder"
+}
+
+proc embed_application {cmd arg} {
+    set cursor [new_element_name embedding]
+
+    frame $cursor -width 640 -height 480
+
+    update idletasks
+    update
+
+    set xid [winfo id $cursor]
+
+    # XXX
+    exec sh -c "mpv --wid=$xid video.mp4 &"
+}
+
+proc md_image {name link} {
+    #if {$imageviewer ne ""} {
+    #    embed_application $imageviewer $link
+    #}
+
+    if {[catch {image create photo -file $link} img]} {
+        placeholder $name
+        return
+    }
+
+    .root.mid.t image create end -image $img
+}
+
+proc md_video {name link} {
+    if {$videoplayer ne ""} {
+        embed_application $videoplayer $link
+    } else {
+        placeholder $name
+    }
 }
 
 # --- ---- ---

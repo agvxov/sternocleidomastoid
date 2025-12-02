@@ -32,6 +32,14 @@
      *        (emphasis_delimiter))
      * On which we depend as a special case. All other combinations can fuck themselves.
      *
+     * (Surprisingly) strikethough is not in common mark, its a Github extension.
+     * It is defined as: "~~ ~~ or ~ ~", which is horrific and warrants a linching.
+     *
+     * The image node has unnamed children.
+     * The named children have no field names. */
+     #define IMG_DESC_CHILD_POS 2
+     #define IMG_DEST_CHILD_POS 5
+    /*
      * Conclusion: I will have to write a markdown parser one day.
      */
     static int last_end_pos = 0;
@@ -41,9 +49,9 @@
         int start = ts_node_start_byte(n);
         int end   = ts_node_end_byte(n);
 
-        //printf("%d %d %d\n", last_end_pos, start, end);
+        printf("%d %d %d\n", last_end_pos, start, end);
 
-        if (start != last_end_pos) {
+        if (start > last_end_pos) {
             ECHO("append_text {%.*s} {}", start - last_end_pos, s+last_end_pos);
         }
 
@@ -68,13 +76,26 @@ enter emphasis {
 
 enter strong_emphasis {
     FLUSH;
+
     char * t = tbget_text;
-    ECHO("append_text {%s} {bold}", t);
+
+    if (!strcmp("emphasis", ts_node_type(ts_node_parent(tbnode)))) {
+        ECHO("append_text {%c%s%c} {bolditalic}", t[0], t, t[0]);
+        ++last_end_pos;
+    } else {
+        ECHO("append_text {%s} {bold}", t);
+    }
+
     free(t);
 }
 
 enter strikethrough {
     FLUSH;
+
+    if (!strcmp("strikethrough", ts_node_type(ts_node_parent(tbnode)))) {
+        break;
+    }
+
     char * t = tbget_text;
     ECHO("append_text {%s} {strike}", t);
     free(t);
@@ -87,10 +108,22 @@ enter code_span {
     free(t);
 }
 
+enter image {
+    FLUSH;
+
+    char * description = tbget_node_text(ts_node_child(tbnode, IMG_DESC_CHILD_POS));
+    char * destination = tbget_node_text(ts_node_child(tbnode, IMG_DEST_CHILD_POS));
+
+    ECHO("md_image {%s} {%s}", description, destination);
+
+    free(description);
+    free(destination);
+}
+
 leave inline {
     // XXX
     auto n = tbnode;
-    int end   = ts_node_end_byte(n);
+    int end = ts_node_end_byte(n);
 
     if (end != last_end_pos) {
         ECHO("append_text {%.*s} {}", end - last_end_pos, tbcode+last_end_pos);
