@@ -165,9 +165,11 @@ text .root.mid.t \
     -borderwidth 0 \
     -highlightthickness 0 \
     -wrap word \
-    -padx 0 \
-    -pady 0
+    -padx 7 \
+    -pady 10
+
 setup_tags .root.mid.t
+
 pack .root.mid.t -expand 1 -fill both
 
 bind . <Destroy> {exit}
