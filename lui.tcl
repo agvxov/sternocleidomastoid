@@ -3,18 +3,36 @@ package require Tk
 # --- ------- ---
 # --- Globals ---
 # --- ------- ---
-# XXX
-#set opener $env(OPENER)
 
-# XXX modify to use environment variable
+# NOTE:
+#  Openers / default application management systems are in utter disrepair.
+#  With xdg-open it is virtually impossible to catch the correct PID.
+#  No proper alternatives exist as of 2025.
+#  One suitable candidate would be `handlr`, but is a state of fork wars.
+#  Therefor, since its not the responsibility of a MD renderer to handle all that,
+#   we are cavemaning it until better days come (hopefully).
+proc get_user_command {resource} {
+    set video_extensions {mp4}
+    set image_extensions {png jpg gif}
+
+    set ext [string trimleft [file extension $resource] .]
+
+    if {[info exists ::env(VIDEOPLAYER)]
+    &&  [lsearch -exact $video_extensions $ext] != -1} {
+        return "$::env(VIDEOPLAYER) $resource"
+    }
+
+    if {[info exists ::env(IMAGEVIEWER)]
+    &&  [lsearch -exact $image_extensions $ext] != -1} {
+        return "$::env(IMAGEVIEWER) $resource"
+    }
+
+    return ""
+}
+
 proc open_url {url} {
     [catch {exec xdg-open "$url" &}]
 }
-
-#proc pid2xid {pid} {
-#    set ids [split [exec xdotool search --pid $pid] "\n"]
-#    return [xid [lindex $ids 0]]
-#}
 
 proc pid2xid {pid} {
     set r ""
@@ -25,24 +43,33 @@ proc pid2xid {pid} {
 }
 
 set embedding_queue {}
-proc queue_embedding {e cmd arg} {
-    lappend $::embedding_queue "{$e $cmd $arg}"
+proc queue_embedding {e cmd} {
+    lappend ::embedding_queue "{$e {$cmd}}"
 }
 
-proc embed_application {$e $cmd $arg} {
-    set container_xid [winfo id $cursor]
+proc embed_application {e cmd} {
+    set container_xid [winfo id $e]
 
-    set pid [exec {*}$cmd $arg &]
+    puts "cmd: $cmd"
+
+    set pid [exec {*}$cmd &];
     puts "PID: $pid"
 
-    #after 1000
+    #after 100000
+    after 1000
 
     set xid [pid2xid $pid]
     puts "XID: $xid"
 
+    if {$xid eq ""} {
+        # XXX
+        return
+    }
+
     reparent $xid $container_xid
 
     return
+
     # XXX ignore; fallback code
     if {[catch {image create photo -file $link} img]} {
         placeholder $name
@@ -56,9 +83,9 @@ proc finalize_embeddings {} {
     update idletasks
     update
 
-    foreach {e cmd arg} $::embedding_queue {
-        puts "{$e $cmd $arg}"
-        embed_application $e $cmd $arg
+    foreach {i} $::embedding_queue {
+        foreach {e cmd} {*}$i break
+        embed_application $e $cmd
     }
 
     set ::embedding_queue {}
@@ -197,12 +224,19 @@ proc placeholder {target} {
 }
 
 proc media {name link} {
+    set command [get_user_command $link]
+
+    if {$command eq ""} {
+        placeholder $name
+        return
+    }
+
     set cursor [new_element_name embedding]
 
     frame $cursor -width 400 -height 400
     .root.mid.t window create end -window $cursor
 
-    queue_embedding $cursor xdg-open $link
+    queue_embedding $cursor $command
 }
 
 # --- ---- ---

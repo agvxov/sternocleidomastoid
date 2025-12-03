@@ -227,7 +227,7 @@ int Tcl_reparent(TCL_ARGS) {
         return TCL_ERROR;
     }
 
-    Window child = (Window)strtoul(argv[1], NULL, 0);
+    Window child  = (Window)strtoul(argv[1], NULL, 0);
     Window parent = (Window)strtoul(argv[2], NULL, 0);
 
     Display *dpy = Tk_Display(Tk_MainWindow(interp));
