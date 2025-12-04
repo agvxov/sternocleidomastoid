@@ -28,10 +28,14 @@ int Tcl_reparent(TCL_ARGS) {
     Window child  = (Window)strtoul(argv[1], NULL, 0);
     Window parent = (Window)strtoul(argv[2], NULL, 0);
 
-    Display *dpy = Tk_Display(Tk_MainWindow(interp));
-    XReparentWindow(dpy, child, parent, 0, 0);
-    XMapWindow(dpy, child);
-    XFlush(dpy);
+    Display * display = Tk_Display(Tk_MainWindow(interp));
+    XReparentWindow(display, child, parent, 0, 0);
+    XMapWindow(display, child);
+
+    // XXX
+    XMoveResizeWindow(display, child, 0, 0, 400, 400);
+
+    XFlush(display);
 
     return TCL_OK;
 }

@@ -12,8 +12,8 @@ package require Tk
 #  Therefor, since its not the responsibility of a MD renderer to handle all that,
 #   we are cavemaning it until better days come (hopefully).
 proc get_user_command {resource} {
-    set video_extensions {mp4}
-    set image_extensions {png jpg gif}
+    set video_extensions {mp4 mkv webm}
+    set image_extensions {png jpg jpeg gif bmp webp}
 
     set ext [string trimleft [file extension $resource] .]
 
@@ -43,25 +43,26 @@ proc pid2xid {pid} {
 }
 
 set embedding_queue {}
-proc queue_embedding {e cmd name link} {
-    lappend ::embedding_queue "{$e {$cmd} $name $link}"
+proc queue_embedding {mark cmd name link} {
+    lappend ::embedding_queue "{$mark {$cmd} $name $link}"
 }
 
 
-proc embed_application {e cmd name link} {
-    proc fallback {name link} {
+proc embed_application {mark cmd name link} {
+    proc fallback {mark name link} {
         try {
             set img [image create photo -file $link]
-            .root.mid.t image create end -image $img
+            .root.mid.t image create $mark -image $img
         } on error {err opts} {
-            placeholder $name
+            .root.mid.t insert $mark $name placeholder
         }
     }
-    proc try_reparent {e pid container_xid attempt name link} {
-        set max_attempts 20
+    proc try_embed {mark pid attempt name link} {
+        set max_attempts 10
+        set ms_retry_interval 100
 
         if {$attempt > $max_attempts} {
-            fallback $name $link
+            fallback $mark $name $link
             return
         }
 
@@ -69,17 +70,25 @@ proc embed_application {e cmd name link} {
 
         if {$xid eq ""} {
             incr attempt
-            after 100 [list try_reparent $e $pid $container_xid $attempt $name $link]
+            after $ms_retry_interval [list
+                try_embed $mark $pid  $attempt $name $link
+            ]
             return
         }
+
+        set cursor [new_element_name embedding]
+
+        frame $cursor -width 400 -height 400
+        .root.mid.t window create $mark -window $cursor
+        set container_xid [winfo id $cursor]
 
         reparent $xid $container_xid
     }
 
-    set container_xid [winfo id $e]
-    set pid [exec {*}$cmd &]
+    puts "-- $mark"
 
-    try_reparent $e $pid $container_xid 1 $name $link
+    set pid [exec {*}$cmd &]
+    try_embed $mark $pid 1 $name $link
 }
 
 
@@ -88,9 +97,8 @@ proc finalize_embeddings {} {
     update
 
     foreach {i} $::embedding_queue {
-        foreach {e cmd name link} {*}$i break
-        embed_application $e $cmd $name $link
-        puts $cmd
+        foreach {mark cmd name link} {*}$i break
+        embed_application $mark $cmd $name $link
     }
 
     set ::embedding_queue {}
@@ -236,12 +244,11 @@ proc media {name link} {
         return
     }
 
-    set cursor [new_element_name embedding]
+    set mark [new_element_name mark]
+    .root.mid.t mark set $mark insert
+    .root.mid.t mark gravity $mark left
 
-    frame $cursor -width 400 -height 400
-    .root.mid.t window create end -window $cursor
-
-    queue_embedding $cursor $command $name $link
+    queue_embedding $mark $command $name $link
 }
 
 # --- ---- ---
