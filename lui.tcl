@@ -4,6 +4,9 @@ package require Tk
 # --- Globals ---
 # --- ------- ---
 
+# god text-element widget, everything within the document is a child of this.
+set TE .root.mid.t
+
 # NOTE:
 #  Openers / default application management systems are in utter disrepair.
 #  With xdg-open it is virtually impossible to catch the correct PID.
@@ -59,9 +62,9 @@ proc embed_application {mark cmd name link} {
     proc fallback {mark name link} {
         try {
             set img [image create photo -file $link]
-            .root.mid.t image create $mark -image $img
+            $::TE image create $mark -image $img
         } on error {err opts} {
-            .root.mid.t insert $mark $name placeholder
+            $::TE insert $mark $name placeholder
         }
     }
     proc try_embed {mark pid attempt name link} {
@@ -86,13 +89,14 @@ proc embed_application {mark cmd name link} {
         set cursor [new_element_name embedding]
 
         frame $cursor -width 400 -height 400
-        .root.mid.t window create $mark -window $cursor
+        $::TE window create $mark -window $cursor
         set container_xid [winfo id $cursor]
+
+        #update idletasks
+        #update
 
         reparent $xid $container_xid
     }
-
-    puts "-- $mark"
 
     set pid [exec {*}$cmd &]
     try_embed $mark $pid 1 $name $link
@@ -100,9 +104,6 @@ proc embed_application {mark cmd name link} {
 
 
 proc finalize_embeddings {} {
-    update idletasks
-    update
-
     foreach {i} $::embedding_queue {
         foreach {mark cmd name link} {*}$i break
         embed_application $mark $cmd $name $link
@@ -118,7 +119,7 @@ proc new_element_name {type} {
         set ::element_counter($type) 0
     }
     incr ::element_counter($type)
-    return ".root.mid.t.${type}$::element_counter($type)"
+    return "$::TE.${type}$::element_counter($type)"
 }
 
 # inline formatting
@@ -160,7 +161,7 @@ proc setup_tags {text_element} {
 set header_font_size 16
 
 proc finalize_document {} {
-    .root.mid.t configure -state disabled
+    $::TE configure -state disabled
 
     finalize_embeddings
 }
@@ -169,7 +170,7 @@ proc finalize_document {} {
 # --- Elements ---
 # --- -------- ---
 proc append_text {text tags} {
-    .root.mid.t insert end $text $tags
+    $::TE insert end $text $tags
 }
 
 proc header {level text} {
@@ -185,7 +186,7 @@ proc quote {text} {
 
     frame $cursor -width 4 -background "#ba0000" -height 1
 
-    .root.mid.t window create end -window $cursor; # -padx {6 6} -pady 2 -align center
+    $::TE window create end -window $cursor; # -padx {6 6} -pady 2 -align center
 
     append_text "$text\n" quote
 }
@@ -193,9 +194,9 @@ proc quote {text} {
 proc link {text url} {
     set tag [new_element_name link]
 
-    .root.mid.t tag configure $tag -foreground blue -underline 1
-    .root.mid.t tag bind $tag <Button-1> [list open_url $url]
-    .root.mid.t insert end $text $tag
+    $::TE tag configure $tag -foreground blue -underline 1
+    $::TE tag bind $tag <Button-1> [list open_url $url]
+    $::TE insert end $text $tag
 }
 
 
@@ -217,7 +218,7 @@ proc code {text} {
     $cursor insert end $text code
     $cursor configure -state disabled
 
-    .root.mid.t window create end -window $cursor
+    $::TE window create end -window $cursor
 }
 
 proc list_item {level text} {
@@ -236,7 +237,7 @@ proc horizontal_line {} {
         -borderwidth 0 \
         -highlightthickness 0
 
-    .root.mid.t window create end -window $cursor
+    $::TE window create end -window $cursor
     append_text "\n\n" {}
 }
 
@@ -253,8 +254,8 @@ proc media {name link} {
     }
 
     set mark [new_element_name mark]
-    .root.mid.t mark set $mark insert
-    .root.mid.t mark gravity $mark left
+    $::TE mark set $mark insert
+    $::TE mark gravity $mark left
 
     queue_embedding $mark $command $name $link
 }
@@ -281,7 +282,7 @@ grid columnconfigure .root 2 -weight 1
 grid rowconfigure .root 0 -weight 1
 #pack propagate .mod 0
 
-text .root.mid.t \
+text $::TE \
     -background [. cget -background] \
     -borderwidth 0 \
     -highlightthickness 0 \
@@ -289,8 +290,8 @@ text .root.mid.t \
     -padx 7 \
     -pady 10
 
-setup_tags .root.mid.t
+setup_tags $::TE
 
-pack .root.mid.t -expand 1 -fill both
+pack $::TE -expand 1 -fill both
 
 bind . <Destroy> {exit}
