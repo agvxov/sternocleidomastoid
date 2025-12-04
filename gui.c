@@ -56,7 +56,9 @@ void tcl_run(void) {
 
     int result = Tcl_Eval(interp, script_buffer);
     if (result == TCL_ERROR) {
-        fprintf(stderr, "Tcl script execution failed: %s\n", Tcl_GetStringResult(interp));
+        fprintf(stderr, "Error: %s\n", Tcl_GetStringResult(interp));
+        fprintf(stderr, "%s\n", Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY));
+        fprintf(stderr, "Line: %d\n", Tcl_GetErrorLine(interp));
         exit(1);
     }
 
