@@ -54,7 +54,17 @@ enter inline {
             ECHO("header %d {%s}", heading_level, t);
         } break;
         case QUOTE: {
-            ECHO("quote {%s}", t);
+            int last_line_start = 0;
+            for (const char * s = t; true; s++) {
+                if (*s == '\n'
+                ||  *s == '\0') {
+                    ECHO("quote {%.*s}", s - (t + last_line_start), t + last_line_start);
+                    last_line_start = (s - t) + 1;
+                }
+                if (!*s) {
+                    break;
+                }
+            }
         } break;
         case LIST: {
             char prefix[8] = {0};

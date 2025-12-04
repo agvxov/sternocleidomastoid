@@ -210,10 +210,9 @@ proc paragraph_end {} {
 proc quote {text} {
     set cursor [new_element_name quote]
 
-    frame $cursor -width 4 -background "#ba0000" -height 1
-
-    $::TE window create end -window $cursor; # -padx {6 6} -pady 2 -align center
-
+    # XXX
+    frame $cursor -background "#ba0000" -width 10 -height 12
+    $::TE window create end -padx 6 -pady 2 -window $cursor
     append_text "$text\n" quote
 }
 
