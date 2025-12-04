@@ -21,7 +21,7 @@ Unicode is supported. ☺
 
 ![placeholder](image.jpg)
 
-![placehholder_for_intentially_broken_image](image.jpg)
+![placehholder_for_intentially_broken_image](shadow.jpg)
 
 ---
 
