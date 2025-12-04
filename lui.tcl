@@ -228,22 +228,23 @@ proc link {text url} {
 proc code {text} {
     set cursor [new_element_name code]
 
-    #set lines [llength [split $text "\n"]]
-    #if {$lines < 1} { set lines 1 }
-    #text $::cursor -wrap none -height $lines -borderwidth 1 -relief sunken -font TkFixedFont
-    #pack $::cursor -side top -anchor w -padx 6 -pady 4
-    #$::cursor insert end $text
-    #$::cursor configure -state disabled
-
+    set text [string trimright $text " \t\r\n"]
     set newline_count [expr {[llength [split $text "\n"]] - 1}]
 
-    text $cursor -height $newline_count
+    text $cursor \
+        -wrap none \
+        -bg #f0f0f0 \
+        -bd 2 \
+        -relief sunken \
+        -width 80 \
+        -height $newline_count
     
-    $cursor tag configure code -font CodeFont -background "#f4e8c4"
     $cursor insert end $text code
     $cursor configure -state disabled
-
     $::TE window create end -window $cursor
+
+    append_text $text shadow
+    append_text "\n" {}
 }
 
 proc list_item {level text} {

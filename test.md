@@ -39,7 +39,9 @@ Here's a numbered list:
 Here's a code sample:
 
     # Let me re-iterate ...
-    for i in 1 .. 10 { do-something(i) }
+    for i in 1 .. 10 {
+        do-something(i)
+    }
 
 As you probably guessed, indented 4 spaces.
 By the way, instead of indenting the block, you can use fenced code blocks, if you like:

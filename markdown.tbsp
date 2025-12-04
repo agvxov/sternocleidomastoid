@@ -17,7 +17,6 @@
         HEADING,
         QUOTE,
         LIST,
-        CODE,
     } parent_node_type = NONE;
     int heading_level = 1;
 
@@ -83,9 +82,6 @@ enter inline {
                 } break;
             }
             ECHO("list_item %ld {%s %s}", hs_size(md_list_stack), prefix, t);
-        } break;
-        case CODE: {
-            ECHO("code {%s}", t);
         } break;
     }
 
@@ -160,12 +156,21 @@ enter thematic_break {
 
 
 // --- Code ---
-enter code_fence_content indented_code_block {
-    parent_node_type = CODE;
+enter indented_code_block {
+    char * t = tbget_text;
+
+    ECHO("code {%s}", t);
+
+    free(t);
 }
 
-leave code_fence_content indented_code_block {
-    parent_node_type = NONE;
+// XXX support langauge specification
+enter code_fence_content {
+    char * t = tbget_text;
+
+    ECHO("code {%s}", t);
+
+    free(t);
 }
 
 // --- Tables ---
