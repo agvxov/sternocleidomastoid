@@ -7,11 +7,6 @@ package require Tk
 # god text-element widget, everything within the document is a child of this.
 set TE .root.mid.t
 
-# XXX
-proc is_process_alive {pid} {
-    return [expr ![catch {exec kill -0 $pid} result]]
-}
-
 # NOTE:
 #  Openers / default application management systems are in utter disrepair.
 #  With xdg-open it is virtually impossible to catch the correct PID.
@@ -47,6 +42,10 @@ proc open_url {url} {
     } else {
         catch {exec $::env(BROWSER) "$url" &}
     }
+}
+
+proc is_process_alive {pid} {
+    return [expr ![catch {exec kill -0 $pid} result]]
 }
 
 proc pid2xid {pid} {
@@ -129,8 +128,9 @@ proc finalize_embeddings {} {
 
     foreach {i} $::embedding_queue {
         foreach {mark cmd name link} {*}$i break
-        #XXX set pid [exec {*}$cmd >& /dev/null &]
-        set pid [exec {*}$cmd &]
+        #NOTE: for debugging, use this:
+        #set pid [exec {*}$cmd &]
+        set pid [exec {*}$cmd >& /dev/null &]
         lappend pending_embeddings "{$mark $pid $name $link}"
     }
 
@@ -173,6 +173,8 @@ proc setup_tags {text_element} {
 
     $text_element tag configure placeholder -font CodeFont -background red
 
+    $text_element tag configure shadow -elide 1
+
     $text_element tag configure quote \
         -lmargin1 16  \
         -lmargin2 16  \
@@ -207,15 +209,6 @@ proc paragraph_end {} {
     append_text "\n\n" {}
 }
 
-proc quote {text} {
-    set cursor [new_element_name quote]
-
-    # XXX
-    frame $cursor -background "#ba0000" -width 10 -height 12
-    $::TE window create end -padx 6 -pady 2 -window $cursor
-    append_text "$text\n" quote
-}
-
 proc link {text url} {
     set tag [new_element_name link]
 
@@ -224,6 +217,32 @@ proc link {text url} {
     $::TE insert end $text $tag
 }
 
+proc quote {text} {
+    set cursor [new_element_name quote]
+
+    set text [string trimright $text " \t\r\n"]
+    set newline_count [expr {[llength [split $text "\n"]] - 1}]
+
+    frame $cursor
+    $::TE window create end -padx 6 -pady 2 -window $cursor
+
+    canvas $cursor.ribbon \
+        -background "#ba0000" \
+        -width 10 \
+        -highlightthickness 0
+    pack $cursor.ribbon -side left -fill y
+    
+    set cursor $cursor.t
+    text $cursor \
+        -borderwidth 0 \
+        -highlightthickness 0 \
+        -height $newline_count
+    $cursor insert end $text quote
+    pack $cursor
+
+    append_text $text shadow
+    append_text "\n" {}
+}
 
 proc code {text} {
     set cursor [new_element_name code]
