@@ -32,7 +32,7 @@ int Tcl_reparent(TCL_ARGS) {
     XReparentWindow(display, child, parent, 0, 0);
     XMapWindow(display, child);
 
-    // XXX
+    // XXX magic numbers instead of proper sizing
     XMoveResizeWindow(display, child, 0, 0, 400, 400);
 
     XFlush(display);

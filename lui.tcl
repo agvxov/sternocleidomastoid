@@ -7,6 +7,11 @@ package require Tk
 # god text-element widget, everything within the document is a child of this.
 set TE .root.mid.t
 
+# XXX
+proc is_process_alive {pid} {
+    return [expr ![catch {exec kill -0 $pid} result]]
+}
+
 # NOTE:
 #  Openers / default application management systems are in utter disrepair.
 #  With xdg-open it is virtually impossible to catch the correct PID.
@@ -57,59 +62,81 @@ proc queue_embedding {mark cmd name link} {
     lappend ::embedding_queue "{$mark {$cmd} $name $link}"
 }
 
-
-proc embed_application {mark cmd name link} {
-    proc fallback {mark name link} {
-        try {
-            set img [image create photo -file $link]
-            $::TE image create $mark -image $img
-        } on error {err opts} {
-            $::TE insert $mark $name placeholder
+proc finalize_embeddings {} {
+    proc try_embeds {pending_embeddings attempt} {
+        proc fallback {mark name link} {
+            try {
+                set img [image create photo -file $link]
+                $::TE image create $mark -image $img
+            } on error {err opts} {
+                $::TE insert $mark $name placeholder
+            }
         }
-    }
-    proc try_embed {mark pid attempt name link} {
-        set max_attempts 10
+
+        set max_attempts 20
         set ms_retry_interval 100
 
         if {$attempt > $max_attempts} {
-            fallback $mark $name $link
+            foreach {i} $pending_embeddings {
+                foreach {mark pid name link} {*}$i break
+                fallback $mark $name $link
+            }
             return
         }
 
-        set xid [pid2xid $pid]
+        set swap {}
+        set ready {}
+        foreach {i} $pending_embeddings {
+            foreach {mark pid name link} {*}$i break
 
-        if {$xid eq ""} {
-            incr attempt
-            after $ms_retry_interval [list
-                try_embed $mark $pid  $attempt $name $link
-            ]
-            return
+            if {![is_process_alive $pid]} {
+                fallback $mark $name $link
+                continue
+            }
+
+            set xid [pid2xid $pid]
+            if {$xid eq ""} {
+                lappend swap "{$mark $pid $name $link}"
+            } else {
+                lappend ready "{$mark $pid $xid}"
+            }
+        }
+        set pending_embeddings $swap
+
+        foreach {i} $ready {
+            foreach {mark pid xid} {*}$i break
+            set cursor [new_element_name embedding]
+
+            # XXX magic numbers instead of proper sizing
+            frame $cursor -width 400 -height 400
+            $::TE window create $mark -window $cursor
+            set container_xid [winfo id $cursor]
+
+            update idletasks
+            update
+
+            reparent $xid $container_xid
         }
 
-        set cursor [new_element_name embedding]
-
-        frame $cursor -width 400 -height 400
-        $::TE window create $mark -window $cursor
-        set container_xid [winfo id $cursor]
-
-        #update idletasks
-        #update
-
-        reparent $xid $container_xid
+        if {$pending_embeddings eq ""} { return }
+        incr attempt
+        after $ms_retry_interval [list
+            try_embeds $pending_embeddings $attempt
+        ]
     }
 
-    set pid [exec {*}$cmd &]
-    try_embed $mark $pid 1 $name $link
-}
+    set pending_embeddings {}
 
-
-proc finalize_embeddings {} {
     foreach {i} $::embedding_queue {
         foreach {mark cmd name link} {*}$i break
-        embed_application $mark $cmd $name $link
+        #XXX set pid [exec {*}$cmd >& /dev/null &]
+        set pid [exec {*}$cmd &]
+        lappend pending_embeddings "{$mark $pid $name $link}"
     }
 
     set ::embedding_queue {}
+
+    try_embeds $pending_embeddings 1
 }
 
 # produce unique widget names so Tk accepts them
@@ -161,9 +188,8 @@ proc setup_tags {text_element} {
 set header_font_size 16
 
 proc finalize_document {} {
-    $::TE configure -state disabled
-
     finalize_embeddings
+    $::TE configure -state disabled
 }
 
 # --- -------- ---
