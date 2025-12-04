@@ -43,49 +43,54 @@ proc pid2xid {pid} {
 }
 
 set embedding_queue {}
-proc queue_embedding {e cmd} {
-    lappend ::embedding_queue "{$e {$cmd}}"
+proc queue_embedding {e cmd name link} {
+    lappend ::embedding_queue "{$e {$cmd} $name $link}"
 }
 
-proc embed_application {e cmd} {
+
+proc embed_application {e cmd name link} {
+    proc fallback {name link} {
+        try {
+            set img [image create photo -file $link]
+            .root.mid.t image create end -image $img
+        } on error {err opts} {
+            placeholder $name
+        }
+    }
+    proc try_reparent {e pid container_xid attempt name link} {
+        set max_attempts 20
+
+        if {$attempt > $max_attempts} {
+            fallback $name $link
+            return
+        }
+
+        set xid [pid2xid $pid]
+
+        if {$xid eq ""} {
+            incr attempt
+            after 100 [list try_reparent $e $pid $container_xid $attempt $name $link]
+            return
+        }
+
+        reparent $xid $container_xid
+    }
+
     set container_xid [winfo id $e]
+    set pid [exec {*}$cmd &]
 
-    puts "cmd: $cmd"
-
-    set pid [exec {*}$cmd &];
-    puts "PID: $pid"
-
-    #after 100000
-    after 1000
-
-    set xid [pid2xid $pid]
-    puts "XID: $xid"
-
-    if {$xid eq ""} {
-        # XXX
-        return
-    }
-
-    reparent $xid $container_xid
-
-    return
-
-    # XXX ignore; fallback code
-    if {[catch {image create photo -file $link} img]} {
-        placeholder $name
-        return
-    }
-
-    .root.mid.t image create end -image $img
+    try_reparent $e $pid $container_xid 1 $name $link
 }
+
 
 proc finalize_embeddings {} {
     update idletasks
     update
 
     foreach {i} $::embedding_queue {
-        foreach {e cmd} {*}$i break
-        embed_application $e $cmd
+        foreach {e cmd name link} {*}$i break
+        embed_application $e $cmd $name $link
+        puts $cmd
     }
 
     set ::embedding_queue {}
@@ -236,7 +241,7 @@ proc media {name link} {
     frame $cursor -width 400 -height 400
     .root.mid.t window create end -window $cursor
 
-    queue_embedding $cursor $command
+    queue_embedding $cursor $command $name $link
 }
 
 # --- ---- ---

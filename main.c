@@ -42,11 +42,10 @@ signed main(int argc, char * argv[]) {
 
     char * in_str = slurp(in_file);
 
-    //script_buffer = sdsnew("source \"lui.tcl\"\n");
-    script_buffer = "source \"test.tcl\"";
+    script_buffer = sdsnew("source \"lui.tcl\"\n");
 
     // IoC
-    //tbtraverse(in_str);
+    tbtraverse(in_str);
 
     // Core
     tcl_loop();

@@ -19,6 +19,10 @@ Unicode is supported. ☺
 
 ![placeholder](image.png)
 
+![placeholder](image.jpg)
+
+![placehholder_for_intentially_broken_image](image.jpg)
+
 ---
 
 ## An h2 header
@@ -40,3 +44,5 @@ By the way, instead of indenting the block, you can use fenced code blocks, if y
 ```c
     signed main(void) { ; }
 ```
+
+![placeholder](video.mp4)
