@@ -35,10 +35,12 @@
      * (Surprisingly) strikethough is not in common mark, its a Github extension.
      * It is defined as: "~~ ~~ or ~ ~", which is horrific and warrants a linching.
      *
-     * The image node has unnamed children.
+     * The image / link node has unnamed children.
      * The named children have no field names. */
      #define IMG_DESC_CHILD_POS 2
      #define IMG_DEST_CHILD_POS 5
+     #define LNK_DESC_CHILD_POS 1
+     #define LNK_DEST_CHILD_POS 4
     /*
      * Conclusion: I will have to write a markdown parser one day.
      */
@@ -115,6 +117,18 @@ enter image {
     char * destination = tbget_node_text(ts_node_child(tbnode, IMG_DEST_CHILD_POS));
 
     ECHO("media {%s} {%s}", description, destination);
+
+    free(description);
+    free(destination);
+}
+
+enter inline_link {
+    FLUSH;
+
+    char * description = tbget_node_text(ts_node_child(tbnode, LNK_DESC_CHILD_POS));
+    char * destination = tbget_node_text(ts_node_child(tbnode, LNK_DEST_CHILD_POS));
+
+    ECHO("link {%s} {%s}", description, destination);
 
     free(description);
     free(destination);

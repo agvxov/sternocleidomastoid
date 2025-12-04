@@ -30,8 +30,15 @@ proc get_user_command {resource} {
     return ""
 }
 
+# NOTE:
+#  Similar problems as above.
 proc open_url {url} {
-    [catch {exec xdg-open "$url" &}]
+    if {[file exists $url] && [string match *.md $url]} {
+        # XXX
+        catch {exec ./main.out "$url" &}
+    } else {
+        catch {exec $::env(BROWSER) "$url" &}
+    }
 }
 
 proc pid2xid {pid} {
@@ -184,12 +191,13 @@ proc quote {text} {
 }
 
 proc link {text url} {
-    set ::cursor [new_element_name link]
+    set tag [new_element_name link]
 
-    label $::cursor -text $text -wraplength 600 -justify left -fg blue -underline 1
-    pack  $::cursor -side top -anchor w -padx 4 -pady 2
-    bind  $::cursor <Button-1> [list open_url $url]
+    .root.mid.t tag configure $tag -foreground blue -underline 1
+    .root.mid.t tag bind $tag <Button-1> [list open_url $url]
+    .root.mid.t insert end $text $tag
 }
+
 
 proc code {text} {
     set cursor [new_element_name code]
