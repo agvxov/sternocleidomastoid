@@ -44,10 +44,12 @@ proc open_url {url} {
     }
 }
 
+# XXX move to C
 proc is_process_alive {pid} {
     return [expr ![catch {exec kill -0 $pid} result]]
 }
 
+# XXX find out if xlib can this do this cleanly
 proc pid2xid {pid} {
     set r ""
     if {![catch {exec xdotool search --pid $pid} out]} {
