@@ -40,7 +40,7 @@ LDLIBS += -ltree-sitter -ltree-sitter-markdown -ltree-sitter-markdown-inline
 # --- Rule Section ---
 all: ${OUT}
 
-${OUT}: ${GENSOURCE} ${OBJECT}
+${OUT}: ${GENSOURCE} ${OBJECT} source/graphical_library.tcl
 	${LINK.c} -o $@ $(addprefix ${OBJECT.d}/,${OBJECT} ${GENSOURCE}) ${LDLIBS}
 
 %.o: %.c
