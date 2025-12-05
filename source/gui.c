@@ -8,7 +8,11 @@
 
 extern const char * script_buffer;
 
-#define TCL_ARGS ClientData clientData, Tcl_Interp *interp, int argc, const char **argv
+#define TCL_ARGS \
+    [[maybe_unused]] ClientData clientData, \
+    [[maybe_unused]] Tcl_Interp *interp, \
+    [[maybe_unused]] int argc, \
+    [[maybe_unused]] const char **argv
 #define TCL_EASY_CREATE_COMMAND(c) \
     Tcl_CreateCommand(interp, #c, Tcl_ ## c, (ClientData)NULL, (void (*)(void*))NULL);
 
