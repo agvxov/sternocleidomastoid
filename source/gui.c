@@ -1,6 +1,8 @@
 #include "gui.h"
 
 #include <stdlib.h>
+#include <signal.h>
+#include <errno.h>
 #include <pthread.h>
 #include <tcl.h>
 #include <tk.h>
@@ -44,6 +46,25 @@ int Tcl_reparent(TCL_ARGS) {
     return TCL_OK;
 }
 
+int Tcl_is_process_alive(TCL_ARGS) {
+    if (argc != 2) {
+        Tcl_WrongNumArgs(interp, 1, (Tcl_Obj*const*)argv, "pid");
+        return TCL_ERROR;
+    }
+
+    char *endptr = NULL;
+    long pid = strtol(argv[1], &endptr, 10);
+    if (!argv[1][0] || *endptr != '\0' || pid <= 0) {
+        Tcl_SetResult(interp, "invalid PID", TCL_STATIC);
+        return TCL_ERROR;
+    }
+
+    int alive = (kill((pid_t)pid, 0) == 0 || errno == EPERM);
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(alive));
+    return TCL_OK;
+}
+
 static
 void tcl_run(void) {
     Tcl_Interp * interp = Tcl_CreateInterp();
@@ -59,6 +80,7 @@ void tcl_run(void) {
     Tcl_SetVar(interp, "WRAPPED", "true", 0); 
 
     TCL_EASY_CREATE_COMMAND(reparent);
+    TCL_EASY_CREATE_COMMAND(is_process_alive);
 
     puts(script_buffer);
 
