@@ -4,4 +4,4 @@ LIB    := $$(pkg-config --cflags --libs tcl tk x11) -ltree-sitter -ltree-sitter-
 main:
 	./tbsp -o markdown.tbsp.c markdown.tbsp
 	./tbsp --prefix il -o inline.tbsp.c inline.tbsp
-	gcc ${CFLAGS} -o main.out main.c gui.c markdown.tbsp.c inline.tbsp.c library/sds.c ${LIB}
+	gcc ${CFLAGS} -o sternocleidomastoid main.c gui.c markdown.tbsp.c inline.tbsp.c library/sds.c ${LIB}

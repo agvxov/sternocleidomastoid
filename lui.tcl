@@ -38,7 +38,7 @@ proc get_user_command {resource} {
 proc open_url {url} {
     if {[file exists $url] && [string match *.md $url]} {
         # XXX
-        catch {exec ./main.out "$url" &}
+        catch {exec sternocleoidomastoid "$url" &}
     } else {
         catch {exec $::env(BROWSER) "$url" &}
     }
