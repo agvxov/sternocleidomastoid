@@ -27,6 +27,23 @@
         PLUS,
         MINUS,
     } md_list_element_type;
+
+    static
+    void preprocess_quote_string(char * quote) {
+        char * o = quote;
+        for (char * s = quote; *s; s++, o++) {
+            *o = *s;
+
+            if (s[0] == '\n'
+            &&  s[1] == '>') {
+                if (s[2] == ' ') {
+                    ++s;
+                }
+                ++s;
+            }
+        }
+        *o = '\0';
+    }
 }
 %language markdown
 %%
@@ -53,6 +70,7 @@ enter inline {
             ECHO("header %d {%s}", heading_level, t);
         } break;
         case QUOTE: {
+            preprocess_quote_string(t);
             ECHO("quote {%s}", t);
         } break;
         case LIST: {

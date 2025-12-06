@@ -242,14 +242,15 @@ proc quote {text} {
     set cursor [new_element_name quote]
 
     set text [string trimright $text " \t\r\n"]
-    set newline_count [expr {[llength [split $text "\n"]] - 1}]
+    set newline_count [expr {[llength [split $text "\n"]]}]
 
     frame $cursor
     $::TE window create end -padx 6 -pady 2 -window $cursor
 
     canvas $cursor.ribbon \
         -background "#ba0000" \
-        -width 10 \
+        -width 8 \
+        -height 1 \
         -highlightthickness 0
     pack $cursor.ribbon -side left -fill y
     
@@ -257,6 +258,8 @@ proc quote {text} {
     text $cursor \
         -borderwidth 0 \
         -highlightthickness 0 \
+        -padx 4 \
+        -background "#eef5f1" \
         -height $newline_count
     $cursor insert end $text quote
     pack $cursor
