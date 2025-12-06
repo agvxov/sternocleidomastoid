@@ -74,6 +74,10 @@ signed main(const int argc, char * argv[]) {
     // IoC
     tbtraverse(in_str);
 
+  #if DEBUG
+    puts(script_buffer);
+  #endif
+
     // Core
     tcl_loop();
     while (true) { usleep(50 * 1000); }

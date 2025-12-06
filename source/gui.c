@@ -82,8 +82,6 @@ void tcl_run(void) {
     TCL_EASY_CREATE_COMMAND(reparent);
     TCL_EASY_CREATE_COMMAND(is_process_alive);
 
-    puts(script_buffer);
-
     int result = Tcl_Eval(interp, script_buffer);
     if (result == TCL_ERROR) {
         fprintf(stderr, "Error: %s\n", Tcl_GetStringResult(interp));

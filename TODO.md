@@ -4,3 +4,4 @@
 * sizing of horizontal lines
 * syntax highlighting
 * shortcuts
+* debug builds always break the GUI
