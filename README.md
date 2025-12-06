@@ -69,7 +69,7 @@ The project produces a single binary.
 Due to how closely Tcl integrates with C, we need not to fork.
 A statically linked version is theoretically possible.
 
-Sternocleidomastoid does not due live updates.
+Sternocleidomastoid does not do live updates.
 It is fast enough relaunch on file change,
 but note that for the time being embeddings are volatile and unreliable,
 so it might not be the best idea.
