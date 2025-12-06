@@ -4,7 +4,6 @@
 * no todo support
 * ugly quotes
 * embedded windows need proper resizing
-* cli
 * documentation
 * sizing of horizontal lines
 * font size configuration
