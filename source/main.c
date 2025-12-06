@@ -22,6 +22,17 @@ void usage(void) {
     );
 }
 
+static
+void chdir_to_parent(const char * const file) {
+    char mutable_file[strlen(file)+1];
+    strcpy(mutable_file, file);
+    char * directory_name = dirname(mutable_file);
+
+    int e = chdir(directory_name);
+
+    if (e == -1) { exit(3); }
+}
+
 signed main(const int argc, char * argv[]) {
     // Init
     int e = 0;
@@ -47,21 +58,18 @@ signed main(const int argc, char * argv[]) {
         }
     }
 
+    char * user_script = getenv("STERNOCLEIDOMASTOID_GRAPHICAL_USER_INTERFACE_SCRIPT");
     if (!in_file) { goto usage_error; }
 
     char * in_str = slurp(in_file);
-
     if (!in_str) { return 2; }
-    
-    {
-        char mutable_in_file[strlen(in_file)+1];
-        strcpy(mutable_in_file, in_file);
-        char * directory_name = dirname(mutable_in_file);
-        e = chdir(directory_name);
-        if (e == -1) { return 3; }
-    }
 
     script_buffer = sdsnew(graphical_library_script);
+    if (user_script) {
+        script_buffer = sdscatfmt(script_buffer, "source \"%s\"\n", user_script);
+    }
+    
+    chdir_to_parent(in_file);
 
     // IoC
     tbtraverse(in_str);

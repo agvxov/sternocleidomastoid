@@ -37,14 +37,14 @@ proc get_user_command {resource} {
 #  Similar problems as above.
 proc open_url {url} {
     if {[file exists $url] && [string match *.md $url]} {
-        # XXX
         catch {exec sternocleoidomastoid "$url" &}
     } else {
         catch {exec $::env(BROWSER) "$url" &}
     }
 }
 
-# XXX find out if xlib can this do this cleanly
+# NOTE:
+#  Could be done from C, but Xlib terrifies me.
 proc pid2xid {pid} {
     set r ""
     if {![catch {exec xdotool search --pid $pid} out]} {
@@ -53,11 +53,21 @@ proc pid2xid {pid} {
     return $r
 }
 
+# NOTE:
+#  All embeddings are done at the end so that potential slow processes
+#   may not hinder the documentum rendering speed.
+#  The required information for this system is stored as followes.
 set embedding_queue {}
 proc queue_embedding {mark cmd name link} {
     lappend ::embedding_queue "{$mark {$cmd} $name $link}"
 }
 
+# NOTE:
+#  The reason all embeddings are handled within the same loop,
+#   -instead of using a cleaner, per process `after` system-
+#   is how Tk handles GUI updates.
+#  Namely it would result in ugly race condition bugs where
+#   interupts and interupted, and windows don't render.
 proc finalize_embeddings {} {
     proc try_embeds {pending_embeddings attempt} {
         proc fallback {mark name link} {
@@ -146,15 +156,32 @@ proc new_element_name {type} {
     return "$::TE.${type}$::element_counter($type)"
 }
 
-# inline formatting
-font create NormalFont     -family sans -size 12
-font create BoldFont       -family sans -size 12 -weight bold
-font create ItalicFont     -family sans -size 12 -slant italic
-font create BoldItalicFont -family sans -size 12 -weight bold -slant italic
-font create H1Font         -family sans -size 22 -weight bold
-font create H2Font         -family sans -size 16 -weight bold
-font create H3Font         -family sans -size 12 -weight bold
-font create CodeFont       -family courier -size 11
+# This proc is provided so that overriding the over all fontsize from a userscript is easier.
+# One would have to just set $base_font and recall setup_fonts.
+set base_font_size 12
+proc setup_fonts {} {
+    catch { font delete NormalFont     }
+    catch { font delete BoldFont       }
+    catch { font delete ItalicFont     }
+    catch { font delete BoldItalicFont }
+    catch { font delete H1Font         }
+    catch { font delete H2Font         }
+    catch { font delete H3Font         }
+    catch { font delete CodeFont       }
+
+    font create NormalFont     -family sans -size $::base_font_size
+    font create BoldFont       -family sans -size $::base_font_size -weight bold
+    font create ItalicFont     -family sans -size $::base_font_size -slant italic
+    font create BoldItalicFont -family sans -size $::base_font_size -weight bold -slant italic
+    font create H1Font         -family sans -size [expr $::base_font_size + 10] -weight bold
+    font create H2Font         -family sans -size [expr $::base_font_size + 2]  -weight bold
+    font create H3Font         -family sans -size $::base_font_size -weight bold
+    # NOTE: monospace fonts are usually larger for the same size
+    font create CodeFont       -family courier -size [expr $::base_font_size - 4]
+
+    option add *Font NormalFont
+}
+setup_fonts
 
 proc setup_tags {text_element} {
     $text_element tag configure h1         -font H1Font
@@ -182,9 +209,6 @@ proc setup_tags {text_element} {
         -lmargin1 0 \
         -lmargin2 0
 }
-
-# formatting settings
-set header_font_size 16
 
 proc finalize_document {} {
     finalize_embeddings
