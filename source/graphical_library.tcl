@@ -347,7 +347,7 @@ proc task_list_marker {is_checked} {
 # --- ---- ---
 # --- Exec ---
 # --- ---- ---
-wm title . "Markdown-GUI"
+wm title . "Sternocleidomastoid"
 . configure -background #ffffff
 
 pack [frame .root -padx 0 -pady 0] -fill both -expand 1
