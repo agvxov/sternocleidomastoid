@@ -197,7 +197,9 @@ proc setup_tags {text_element} {
 
     $text_element tag configure placeholder -font CodeFont -background red
 
-    $text_element tag configure shadow -elide 1
+    $text_element tag configure monospace -font CodeFont
+    $text_element tag configure green     -font CodeFont -foreground green
+    $text_element tag configure red       -font CodeFont -foreground red
 
     $text_element tag configure quote \
         -lmargin1 16  \
@@ -208,6 +210,8 @@ proc setup_tags {text_element} {
     $text_element tag configure quote_stripe \
         -lmargin1 0 \
         -lmargin2 0
+
+    $text_element tag configure shadow -elide 1
 }
 
 proc finalize_document {} {
@@ -235,7 +239,7 @@ proc link {text url} {
 
     $::TE tag configure $tag -foreground blue -underline 1
     $::TE tag bind $tag <Button-1> [list open_url $url]
-    $::TE insert end $text $tag
+    append_text $text $tag
 }
 
 proc quote {text} {
@@ -328,6 +332,16 @@ proc media {name link} {
     $::TE mark gravity $mark left
 
     queue_embedding $mark $command $name $link
+}
+
+proc task_list_marker {is_checked} {
+    append_text "\[" monospace
+    if {$is_checked} {
+        append_text "✔" green
+    } else {
+        append_text "X" red
+    }
+    append_text "\]" monospace
 }
 
 # --- ---- ---

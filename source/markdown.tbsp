@@ -218,11 +218,11 @@ enter code_fence_content {
 
 // --- To-do ---
 enter task_list_marker_checked {
-    //ECHO("\\fB[X]\\fP ");
+    ECHO("task_list_marker 1");
 }
 
 enter task_list_marker_unchecked {
-    //ECHO("\\fB[ ]\\fP ");
+    ECHO("task_list_marker 0");
 }
 
 %%

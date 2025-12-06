@@ -50,3 +50,6 @@ By the way, instead of indenting the block, you can use fenced code blocks, if y
 ```
 
 ![placeholder](video.mp4)
+
+- [X] Write native markdown viewer
+- [ ] World domination
