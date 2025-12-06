@@ -299,9 +299,10 @@ proc list_item {level text} {
 proc horizontal_line {} {
     set cursor [new_element_name horizontal_line]
 
+    # XXX should be dynamically sized
     frame $cursor \
         -height 2 \
-        -width 200 \
+        -width 400 \
         -background "#000000" \
         -borderwidth 0 \
         -highlightthickness 0
