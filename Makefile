@@ -33,8 +33,8 @@ else
 endif
 
 CFLAGS += -std=c23
-CPPFLAGS += -D_GNU_SOURCE -I${SOURCE.d} -I${OBJECT.d} -I${LIB.d}
-LDLIBS += $$(pkg-config --cflags --libs tcl tk x11)
+CPPFLAGS += -D_GNU_SOURCE -I${SOURCE.d} -I${OBJECT.d} -I${LIB.d} $$(pkg-config --cflags tcl tk x11)
+LDLIBS += $$(pkg-config --libs tcl tk x11)
 LDLIBS += -ltree-sitter -ltree-sitter-markdown -ltree-sitter-markdown-inline
 
 # --- Rule Section ---
