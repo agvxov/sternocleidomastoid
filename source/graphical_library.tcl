@@ -55,7 +55,7 @@ proc pid2xid {pid} {
 
 # NOTE:
 #  All embeddings are done at the end so that potential slow processes
-#   may not hinder the documentum rendering speed.
+#   may not hinder the document rendering speed.
 #  The required information for this system is stored as followes.
 set embedding_queue {}
 proc queue_embedding {mark cmd name link} {
@@ -67,7 +67,7 @@ proc queue_embedding {mark cmd name link} {
 #   -instead of using a cleaner, per process `after` system-
 #   is how Tk handles GUI updates.
 #  Namely it would result in ugly race condition bugs where
-#   interupts and interupted, and windows don't render.
+#   interupts are interupted and windows don't render.
 proc finalize_embeddings {} {
     proc try_embeds {pending_embeddings attempt} {
         proc fallback {mark name link} {
